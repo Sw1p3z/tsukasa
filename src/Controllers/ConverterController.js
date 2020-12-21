@@ -3,7 +3,7 @@
 const Controller = require('./Controller');
 
 class ConverterController extends Controller {
-    async convertMiles() {
+    async convertMiles(){
         const miles = parseFloat(this._message.content.substr(15));
         if ( isNaN(miles) ){
             await this._message.channel.send('dati non validi');

@@ -3,5 +3,5 @@
 module.exports = {
     ChatController: require('./ChatController'),
     MusicController: require('./MusicController'),
-    ConvertController: require('./ConverterController')
+    ConverterController: require('./ConverterController')
 };
