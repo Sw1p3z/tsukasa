@@ -2,3 +2,6 @@
 node_modules/
 config.json
 tests
+package-lock.json
+lala.log
+
