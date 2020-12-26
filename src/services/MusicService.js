@@ -18,7 +18,6 @@ class MusicService extends Service {
         return isYoutubeURL;
     }
 
-    _message = null;
     _channel = null;
     _responseMessage = null;
 
@@ -66,7 +65,8 @@ class MusicService extends Service {
         }
         return {
             title: songInfo.videoDetails.title,
-            url: songInfo.videoDetails.video_url
+            url: songInfo.videoDetails.video_url,
+            loop: false
         };
     }
 
@@ -75,7 +75,8 @@ class MusicService extends Service {
         if ( typeof queue === 'undefined' ){
             queue = {
                 list: [],
-                connection: null
+                connection: null,
+                currentStream: null
             };
             MusicService._queue.set(this._channel.id, queue);
         }
@@ -95,7 +96,7 @@ class MusicService extends Service {
         const voiceChannel = message.member.voice.channel;
         if ( typeof voiceChannel === 'undefined' ){
             available = false;
-            await message.channel.send('Devi entrare in un canale vocale per sentire la musica!');
+            await message.channel.send('Devi entrare in un canale vocale prima!');
         }else{
             const permissions = voiceChannel.permissionsFor(message.client.user);
             if ( !permissions.has("CONNECT") || !permissions.has("SPEAK") ){
@@ -108,7 +109,7 @@ class MusicService extends Service {
 
     async playQueue(voiceChannel){
         if ( this.isQueueEmpty() ){
-            await message.channel.send('Non ci sono altri brani in coda.');
+            await this._channel.send('Non ci sono altri brani in coda.');
             return;
         }
         const queue = MusicService._queue.get(this._channel.id);
@@ -116,16 +117,24 @@ class MusicService extends Service {
             queue.connection = await voiceChannel.join();
         }
         queue.currentStream = ytdl(queue.list[0].url);
-        const dispatcher = queue.connection.play(queue.currentStream).on('finish', () => {
-            queue.list.shift();
+        queue.connection.play(queue.currentStream).on('finish', () => {
+            if ( typeof queue === 'object' && queue.list.length >= 1 && queue.list[0].loop !== true ){
+                queue.list.shift();
+            }
+            queue.currentStream = null;
             this.playQueue(voiceChannel);
         }).on('error', (error) => console.error(error));
         await this._updateStatus('Sto riproducendo ' + queue.list[0].title);
     }
 
+    getSongBeingPlayed(){
+        const queue = MusicService._queue.get(this._channel.id);
+        return typeof queue === 'undefined' || queue.list.length === 0 || queue.currentStream === null ? null : queue.list[0];
+    }
+
     async skip(){
         const queue = MusicService._queue.get(this._channel.id);
-        if ( typeof queue !== 'undefined' ){
+        if ( typeof queue !== 'undefined' && queue.connection.dispatcher !== null ){
             queue.connection.dispatcher.end();
         }
     }
@@ -134,12 +143,60 @@ class MusicService extends Service {
         const queue = MusicService._queue.get(this._channel.id);
         if ( typeof queue !== 'undefined' ){
             queue.list = [];
-            queue.connection.dispatcher.end();
+            if ( queue.connection.dispatcher !== null ){
+                queue.connection.dispatcher.end();
+            }
         }
     }
 
     getQueue(){
         return MusicService._queue.has(this._channel.id) ? MusicService._queue.get(this._channel.id).list : [];
+    }
+
+    async playlistExists(name, user, isPrivate){
+        const query = {
+            channelID: this._channel.guild.id,
+            isPrivate: ( isPrivate === true ),
+            name: name
+        };
+        let result;
+        if ( query.isPrivate === true ){
+            query.userID = user.id;
+            result = await global.database.collection('playlists').findOne(query);
+        }else{
+            result = await global.database.collection('playlists').findOne(query);
+        }
+        return result !== null;
+    }
+
+    async createPlaylist(name, user, isPrivate){
+        if ( name === '' || name === null ){
+            await this._channel.send('Devi dirmi come si chiama la playlist e il nome non deve contenere spazi.');
+            return;
+        }
+        const exists = Promise.all([this.playlistExists(name, user, false), this.playlistExists(name, user, true)]);
+        if ( exists[0] || exists[1] ){
+            await this._channel.send('Una playlist con lo stesso nome esiste gia!');
+            return;
+        }
+        await global.database.collection('playlists').insertOne({
+            channelID: this._channel.guild.id,
+            userID: user.id,
+            isPrivate: ( isPrivate === true ),
+            name: name,
+            entries: []
+        });
+        this._channel.send('Playlist creata!');
+    }
+
+    async addSongToPlaylist(song, playlistName, user){
+        const collection = global.database.collection('playlists');
+        let playlist = await collection.findOne({
+            channelID: this._channel.id,
+            userID: user.id,
+            name: playlistName,
+        });
+        console.log(playlist);
     }
 }
 

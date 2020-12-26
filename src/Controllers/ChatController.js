@@ -7,7 +7,7 @@ class ChatController extends Controller {
     static _targets = new Map();
 
     _getChannel(){
-        let channel = this._message.channel;
+        let channel = this._message.channel;    
         const targetChannelID = ChatController._targets.get(this._message.guild.id);
         const channelName = config.features.chat.pilotChannelName.toLowerCase();
         if ( typeof targetChannelID !== 'undefined' && this._message.channel.name.toLowerCase() === channelName ){
@@ -54,6 +54,20 @@ class ChatController extends Controller {
         const channel = this._getChannel();
         await this._message.delete();
         await this._replyWithDelay(messageText, 2000, true, channel);
+    }
+
+    async lock(){
+        if ( config.sudo.indexOf(this._message.author.id) >= 0 ){
+            if ( global.locked === true ){
+                global.locked = false;
+                await this._reply('Blocco disattivato.');
+            }else{
+                global.locked = true;
+                await this._reply('Blocco attivato.');
+            }
+        }else{
+            await this._reply('Non hai accesso a questa funzionalità!'); 
+        }
     }
 }
 
