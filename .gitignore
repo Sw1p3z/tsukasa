@@ -4,4 +4,6 @@ config.json
 tests
 package-lock.json
 lala.log
+*.nlp
+drive/
 

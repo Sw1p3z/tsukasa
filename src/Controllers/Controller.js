@@ -32,7 +32,13 @@ class Controller {
         });
     }
 
-    _prompt(channelID, authorID){
+    _prompt(channelID = null, authorID = null){
+        if ( channelID === null ){
+            channelID = this._message.channel.id;
+        }
+        if ( authorID === null ){
+            authorID = this._message.author.id;
+        }
         return new Promise((resolve, reject) => {
             const handler = (message) => {
                 if ( message.channel.id === channelID && message.author.id === authorID ){

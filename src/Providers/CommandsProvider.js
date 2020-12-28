@@ -23,6 +23,11 @@ class MusicProvider extends lala.Provider {
         // Mishelaneous
         Dispatcher.registerCommand('?convert-miles', Controllers.ConverterController, 'convertMiles');
         Dispatcher.registerCommand('?register', Controllers.MemberProfileController, 'register');
+        // TTS
+        Dispatcher.registerCommand('?tts', Controllers.TTSController, 'tts');
+        Dispatcher.registerCommand('?tts-en', Controllers.TTSController, 'ttsEn');
+        // Social spy
+        Dispatcher.registerCommand('?dump', Controllers.SocialSpyController, 'dump');
     }
 }
 
