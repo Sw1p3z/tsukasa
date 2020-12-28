@@ -4,7 +4,7 @@ const lala = require('@lala.js/core');
 const Dispatcher = require('../Dispatcher');
 const Controllers = require('../Controllers');
 
-class MusicProvider extends lala.Provider {
+class CommandsProvider extends lala.Provider {
     static async setup(){
         // Music
         Dispatcher.registerCommand('?play', Controllers.MusicController, 'play');
@@ -31,4 +31,4 @@ class MusicProvider extends lala.Provider {
     }
 }
 
-module.exports = MusicProvider;
+module.exports = CommandsProvider;
